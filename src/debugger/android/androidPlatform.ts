@@ -7,14 +7,20 @@ import {IRunOptions} from "../launchArgs";
 import {CommandExecutor} from "../../common/commandExecutor";
 import {Package} from "../../common/node/package";
 import {PackageNameResolver} from "../../common/android/packageNameResolver";
+import {MakeOutcomeFailDependingOnOutput, PatternToFailure} from "../../common/MakeOutcomeFailDependingOnOutput";
 
 /**
  * Android specific platform implementation for debugging RN applications.
  */
 export class AndroidPlatform implements IAppPlatform {
+    private static RUN_ANDROID_FAILURE_PATTERNS: PatternToFailure = {};
+
+    private static RUN_ANDROID_SUCCESS_PATTERNS: string[] = ["BUILD SUCCESSFUL2", "Starting the app"];
 
     public runApp(runOptions: IRunOptions): Q.Promise<void> {
-        return new CommandExecutor(runOptions.projectRoot).spawnAndWaitReactCommand("run-android");
+        const runAndroidSpawn = new CommandExecutor(runOptions.projectRoot).spawnChildReactCommandProcess("run-android");
+        return new MakeOutcomeFailDependingOnOutput(AndroidPlatform.RUN_ANDROID_SUCCESS_PATTERNS,
+            AndroidPlatform.RUN_ANDROID_FAILURE_PATTERNS).process(runAndroidSpawn);
     }
 
     public enableJSDebuggingMode(runOptions: IRunOptions): Q.Promise<void> {
